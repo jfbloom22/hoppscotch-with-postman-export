@@ -1,4 +1,4 @@
-import { execTestScript, TestScriptContext } from "../../.."
+import { execTestScript, TestScriptContext } from "../../../.."
 
 function func(script: string, envs: TestScriptContext["envs"]) {
   return execTestScript(script, {
@@ -22,7 +22,7 @@ describe("env.resolve", () => {
     return expect(
       func(
         `
-          hopp.env.resolve(5)
+          hopp.env.active.resolve(5)
         `,
         {
           global: [],
@@ -38,8 +38,7 @@ describe("env.resolve", () => {
     return expect(
       func(
         `
-          const data = hopp.env.resolve("<<hello>>")
-          hopp.expect(data).toBe("there")
+          hopp.expect(hopp.env.global.resolve("<<hello>>")).toBe("there")
         `,
         {
           global: [
@@ -60,7 +59,7 @@ describe("env.resolve", () => {
               {
                 failure: null,
                 lhs: "there",
-                line: 3,
+                line: 2,
                 negation: false,
                 rhs: "there",
                 testType: "toBe",
@@ -76,8 +75,7 @@ describe("env.resolve", () => {
     return expect(
       func(
         `
-          const data = hopp.env.resolve("<<hello>>")
-          hopp.expect(data).toBe("there")
+          hopp.expect(hopp.env.active.resolve("<<hello>>")).toBe("there")
         `,
         {
           global: [],
@@ -98,7 +96,7 @@ describe("env.resolve", () => {
               {
                 failure: null,
                 lhs: "there",
-                line: 3,
+                line: 2,
                 negation: false,
                 rhs: "there",
                 testType: "toBe",
@@ -114,8 +112,8 @@ describe("env.resolve", () => {
     return expect(
       func(
         `
-          const data = hopp.env.resolve("<<hello>>")
-          hopp.expect(data).toBe("there")
+          hopp.expect(hopp.env.active.resolve("<<hello>>")).toBe("there")
+          hopp.expect(hopp.env.global.resolve("<<hello>>")).toBe("yo")
         `,
         {
           global: [
@@ -141,9 +139,17 @@ describe("env.resolve", () => {
               {
                 failure: null,
                 lhs: "there",
-                line: 3,
+                line: 2,
                 negation: false,
                 rhs: "there",
+                testType: "toBe",
+              },
+              {
+                failure: null,
+                lhs: "yo",
+                line: 3,
+                negation: false,
+                rhs: "yo",
                 testType: "toBe",
               },
             ],
@@ -157,7 +163,7 @@ describe("env.resolve", () => {
     return expect(
       func(
         `
-          const data = hopp.env.resolve("<<hello>>")
+          const data = hopp.env.active.resolve("<<hello>>")
           hopp.expect(data).toBe("<<hello>>")
         `,
         {

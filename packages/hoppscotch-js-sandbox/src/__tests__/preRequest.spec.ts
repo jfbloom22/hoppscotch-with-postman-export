@@ -1,92 +1,102 @@
-import { execPreRequestScript } from "../preRequest"
-import "@relmify/jest-fp-ts"
+import { execPreRequestScript } from ".."
 
-describe("execPreRequestScript", () => {
-  test("returns the updated envirionment properly", () => {
+const fakeRequest = {
+  headers: {},
+  params: { a: "123", b: "foo" },
+}
+
+describe("pw.* apis", () => {
+  test("pw.env api works", () => {
     return expect(
-      execPreRequestScript(
-        `
-          pw.env.set("bob", "newbob")
-        `,
-        {
+      execPreRequestScript(`pw.env.set('foo', 'bar')`, {
+        envs: { global: [], selected: [] },
+        artifact: {},
+        request: fakeRequest,
+      })
+    ).resolves.toMatchObject({
+      result: {
+        envs: {
           global: [],
           selected: [
-            { key: "bob", value: "oldbob" },
-            { key: "foo", value: "bar" },
+            {
+              key: "foo",
+              value: "bar",
+            },
           ],
-        }
-      )()
-    ).resolves.toEqualRight({
-      global: [],
-      selected: [
-        { key: "bob", value: "newbob" },
-        { key: "foo", value: "bar" },
-      ],
+        },
+      },
+    })
+  })
+})
+
+describe("hopp.* apis", () => {
+  test("hopp.console is available", () => {
+    return expect(
+      execPreRequestScript(`console.log(1)`, {
+        envs: { global: [], selected: [] },
+        artifact: {},
+        request: fakeRequest,
+      })
+    ).resolves.toMatchObject({
+      result: {
+        console: [{ level: "log", line: 1, args: [1] }],
+      },
     })
   })
 
-  test("fails if the key is not a string", () => {
+  test("hopp.request is available", () => {
     return expect(
-      execPreRequestScript(
-        `
-          pw.env.set(10, "newbob")
-        `,
-        {
-          global: [],
-          selected: [
-            { key: "bob", value: "oldbob" },
-            { key: "foo", value: "bar" },
-          ],
-        }
-      )()
-    ).resolves.toBeLeft()
+      execPreRequestScript(`console.log(hopp.request)`, {
+        envs: { global: [], selected: [] },
+        artifact: {},
+        request: fakeRequest,
+      })
+    ).resolves.toMatchObject({
+      result: {
+        console: [{ level: "log", line: 1, args: [fakeRequest] }],
+      },
+    })
   })
 
-  test("fails if the value is not a string", () => {
+  // todo env part is not available
+  test("hopp.env is available", () => {
     return expect(
-      execPreRequestScript(
-        `
-          pw.env.set("bob", 10)
-        `,
-        {
+      execPreRequestScript(`hopp.env.set('foo', 'bar')`, {
+        envs: { global: [], selected: [] },
+        artifact: {},
+        request: fakeRequest,
+      })
+    ).resolves.toMatchObject({
+      result: {
+        envs: {
           global: [],
           selected: [
-            { key: "bob", value: "oldbob" },
-            { key: "foo", value: "bar" },
+            {
+              key: "foo",
+              value: "bar",
+            },
           ],
-        }
-      )()
-    ).resolves.toBeLeft()
+        },
+      },
+    })
   })
 
-  test("fails for invalid syntax", () => {
+  test("hopp.shared and hopp.artifact is available", () => {
     return expect(
       execPreRequestScript(
-        `
-          pw.env.set("bob",
-        `,
+        `hopp.shared.create('foo', {someKey: [1,2,3]})
+            hopp.artifact.create('foo_artifact', {key: "val"})`,
         {
-          global: [],
-          selected: [
-            { key: "bob", value: "oldbob" },
-            { key: "foo", value: "bar" },
-          ],
+          envs: { global: [], selected: [] },
+          artifact: {},
+          request: fakeRequest,
         }
-      )()
-    ).resolves.toBeLeft()
-  })
-
-  test("creates new env variable if doesn't exist", () => {
-    return expect(
-      execPreRequestScript(
-        `
-          pw.env.set("foo", "bar")
-        `,
-        { selected: [], global: [] }
-      )()
-    ).resolves.toEqualRight({
-      global: [],
-      selected: [{ key: "foo", value: "bar" }],
+      )
+    ).resolves.toMatchObject({
+      result: {
+        artifact: { foo_artifact: { key: "val" } },
+        shared: { foo: { someKey: [1, 2, 3] } },
+      },
     })
   })
 })

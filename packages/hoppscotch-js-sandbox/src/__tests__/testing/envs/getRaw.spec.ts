@@ -17,41 +17,96 @@ function func(script: string, envs: TestScriptContext["envs"]) {
   })
 }
 
-describe("env.resolve", () => {
-  test("value should be a string", () => {
+describe("env.getRaw", () => {
+  test("returns the correct value for an existing selected environment value", () => {
     return expect(
       func(
         `
-          hopp.env.resolve(5)
-        `,
+          const data = hopp.env.getRaw("a")
+          hopp.expect(data).toBe("b")
+      `,
+        {
+          global: [],
+          selected: [
+            {
+              key: "a",
+              value: "b",
+            },
+          ],
+        }
+      )
+    ).resolves.toMatchObject({
+      result: {
+        tests: [
+          {
+            name: null,
+            expectations: [
+              {
+                failure: null,
+                lhs: "b",
+                line: 3,
+                negation: false,
+                rhs: "b",
+                testType: "toBe",
+              },
+            ],
+          },
+        ],
+      },
+    })
+  })
+
+  test("returns the correct value for an existing global environment value", () => {
+    return expect(
+      func(
+        `
+          const data = hopp.env.getRaw("a")
+          hopp.expect(data).toBe("b")
+      `,
+        {
+          global: [
+            {
+              key: "a",
+              value: "b",
+            },
+          ],
+          selected: [],
+        }
+      )
+    ).resolves.toMatchObject({
+      result: {
+        tests: [
+          {
+            name: null,
+            expectations: [
+              {
+                failure: null,
+                lhs: "b",
+                line: 3,
+                negation: false,
+                rhs: "b",
+                testType: "toBe",
+              },
+            ],
+          },
+        ],
+      },
+    })
+  })
+
+  test("returns undefined for a key that is not present in both selected or environment", () => {
+    return expect(
+      func(
+        `
+          const data = hopp.env.getRaw("a")
+          hopp.expect(data).toBe(undefined)
+      `,
         {
           global: [],
           selected: [],
         }
       )
     ).resolves.toMatchObject({
-      error: { message: "key is not string" },
-    })
-  })
-
-  test("resolves global variables correctly", () => {
-    return expect(
-      func(
-        `
-          const data = hopp.env.resolve("<<hello>>")
-          hopp.expect(data).toBe("there")
-        `,
-        {
-          global: [
-            {
-              key: "hello",
-              value: "there",
-            },
-          ],
-          selected: [],
-        }
-      )
-    ).resolves.toMatchObject({
       result: {
         tests: [
           {
@@ -59,10 +114,10 @@ describe("env.resolve", () => {
             expectations: [
               {
                 failure: null,
-                lhs: "there",
+                // lhs: undefined,
                 line: 3,
                 negation: false,
-                rhs: "there",
+                // rhs: undefined,
                 testType: "toBe",
               },
             ],
@@ -72,62 +127,24 @@ describe("env.resolve", () => {
     })
   })
 
-  test("resolves selected env variables correctly", () => {
+  test("returns the value defined in selected environment if it is also present in global", () => {
     return expect(
       func(
         `
-          const data = hopp.env.resolve("<<hello>>")
-          hopp.expect(data).toBe("there")
-        `,
-        {
-          global: [],
-          selected: [
-            {
-              key: "hello",
-              value: "there",
-            },
-          ],
-        }
-      )
-    ).resolves.toMatchObject({
-      result: {
-        tests: [
-          {
-            name: null,
-            expectations: [
-              {
-                failure: null,
-                lhs: "there",
-                line: 3,
-                negation: false,
-                rhs: "there",
-                testType: "toBe",
-              },
-            ],
-          },
-        ],
-      },
-    })
-  })
-
-  test("chooses selected env variable over global variables when both have same variable", () => {
-    return expect(
-      func(
-        `
-          const data = hopp.env.resolve("<<hello>>")
-          hopp.expect(data).toBe("there")
-        `,
+          const data = hopp.env.getRaw("a")
+          hopp.expect(data).toBe("selected val")
+      `,
         {
           global: [
             {
-              key: "hello",
-              value: "yo",
+              key: "a",
+              value: "global val",
             },
           ],
           selected: [
             {
-              key: "hello",
-              value: "there",
+              key: "a",
+              value: "selected val",
             },
           ],
         }
@@ -140,10 +157,10 @@ describe("env.resolve", () => {
             expectations: [
               {
                 failure: null,
-                lhs: "there",
+                lhs: "selected val",
                 line: 3,
                 negation: false,
-                rhs: "there",
+                rhs: "selected val",
                 testType: "toBe",
               },
             ],
@@ -153,23 +170,23 @@ describe("env.resolve", () => {
     })
   })
 
-  test("if infinite loop in resolution, abandons resolutions altogether", () => {
+  test("does not resolve environment values", () => {
     return expect(
       func(
         `
-          const data = hopp.env.resolve("<<hello>>")
+          const data = hopp.env.getRaw("a")
           hopp.expect(data).toBe("<<hello>>")
-        `,
+      `,
         {
           global: [],
           selected: [
             {
-              key: "hello",
-              value: "<<there>>",
+              key: "a",
+              value: "<<hello>>",
             },
             {
-              key: "there",
-              value: "<<hello>>",
+              key: "hello",
+              value: "hello",
             },
           ],
         }
@@ -192,6 +209,22 @@ describe("env.resolve", () => {
           },
         ],
       },
+    })
+  })
+
+  test("errors if the key is not a string", () => {
+    return expect(
+      func(
+        `
+          const data = hopp.env.getRaw(5)
+      `,
+        {
+          global: [],
+          selected: [],
+        }
+      )
+    ).resolves.toMatchObject({
+      error: { message: "key is not string" },
     })
   })
 })

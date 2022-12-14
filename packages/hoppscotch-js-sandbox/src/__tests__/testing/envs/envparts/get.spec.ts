@@ -1,4 +1,4 @@
-import { execTestScript, TestScriptContext } from "../../.."
+import { execTestScript, TestScriptContext } from "../../../.."
 
 function func(script: string, envs: TestScriptContext["envs"]) {
   return execTestScript(script, {
@@ -22,11 +22,15 @@ describe("env.get", () => {
     return expect(
       func(
         `
-          const data = hopp.env.get("a")
-          hopp.expect(data).toBe("b")
+          hopp.expect(hopp.env.active.get("a")).toBe("b")
       `,
         {
-          global: [],
+          global: [
+            {
+              key: "a",
+              value: "c",
+            },
+          ],
           selected: [
             {
               key: "a",
@@ -44,7 +48,7 @@ describe("env.get", () => {
               {
                 failure: null,
                 lhs: "b",
-                line: 3,
+                line: 2,
                 negation: false,
                 rhs: "b",
                 testType: "toBe",
@@ -60,8 +64,7 @@ describe("env.get", () => {
     return expect(
       func(
         `
-          const data = hopp.env.get("a")
-          hopp.expect(data).toBe("b")
+          hopp.expect(hopp.env.global.get("a")).toBe("b")
       `,
         {
           global: [
@@ -70,7 +73,12 @@ describe("env.get", () => {
               value: "b",
             },
           ],
-          selected: [],
+          selected: [
+            {
+              key: "a",
+              value: "c",
+            },
+          ],
         }
       )
     ).resolves.toMatchObject({
@@ -82,7 +90,7 @@ describe("env.get", () => {
               {
                 failure: null,
                 lhs: "b",
-                line: 3,
+                line: 2,
                 negation: false,
                 rhs: "b",
                 testType: "toBe",
@@ -98,8 +106,8 @@ describe("env.get", () => {
     return expect(
       func(
         `
-          const data = hopp.env.get("a")
-          hopp.expect(data).toBe(undefined)
+          hopp.expect(hopp.env.active.get("a")).toBe(undefined)
+          hopp.expect(hopp.env.global.get("a")).toBe(undefined)
       `,
         {
           global: [],
@@ -115,6 +123,14 @@ describe("env.get", () => {
               {
                 failure: null,
                 // lhs: undefined,
+                line: 2,
+                negation: false,
+                // rhs: undefined,
+                testType: "toBe",
+              },
+              {
+                failure: null,
+                // lhs: undefined,
                 line: 3,
                 negation: false,
                 // rhs: undefined,
@@ -127,71 +143,76 @@ describe("env.get", () => {
     })
   })
 
-  test("returns the value defined in selected environment if it is also present in global", () => {
-    return expect(
-      func(
-        `
-          const data = hopp.env.get("a")
-          hopp.expect(data).toBe("selected val")
-      `,
-        {
-          global: [
-            {
-              key: "a",
-              value: "global val",
-            },
-          ],
-          selected: [
-            {
-              key: "a",
-              value: "selected val",
-            },
-          ],
-        }
-      )
-    ).resolves.toMatchObject({
-      result: {
-        tests: [
-          {
-            name: null,
-            expectations: [
-              {
-                failure: null,
-                lhs: "selected val",
-                line: 3,
-                negation: false,
-                rhs: "selected val",
-                testType: "toBe",
-              },
-            ],
-          },
-        ],
-      },
-    })
-  })
+  // test("returns the value defined in selected environment if it is also present in global", () => {
+  //   return expect(
+  //     func(
+  //       `
+  //         const data = hopp.env.get("a")
+  //         hopp.expect(data).toBe("selected val")
+  //     `,
+  //       {
+  //         global: [
+  //           {
+  //             key: "a",
+  //             value: "global val",
+  //           },
+  //         ],
+  //         selected: [
+  //           {
+  //             key: "a",
+  //             value: "selected val",
+  //           },
+  //         ],
+  //       }
+  //     )
+  //   ).resolves.toMatchObject({
+  //     result:
+  //     {
+  //       tests: [
+  //         {
+  //           name: null,
+  //           expectations: [
+  //             {
+  //               failure: null,
+  //               lhs: 'selected val',
+  //               line: 3,
+  //               negation: false,
+  //               rhs: 'selected val',
+  //               testType: 'toBe'
+  //             }
+  //           ]
+  //         }
+  //       ]
+  //     }
+  //   })
+  // })
 
   test("resolve environment values", () => {
     return expect(
       func(
         `
-          const data = hopp.env.get("a")
-          hopp.expect(data).toBe("there")
+          hopp.expect(hopp.env.active.get("a")).toBe("a3")
+          hopp.expect(hopp.env.global.get("a")).toBe("a5")
       `,
         {
           global: [
             {
-              key: "hello",
-              value: "<<there>>",
+              key: "a",
+              value: "<<a4>>",
+            },
+            {
+              key: "a4",
+              value: "a5",
             },
           ],
           selected: [
             {
               key: "a",
-              value: "<<hello>>",
+              value: "<<a2>>",
             },
             {
-              key: "there",
-              value: "there",
+              key: "a2",
+              value: "a3",
             },
           ],
         }
@@ -204,10 +225,18 @@ describe("env.get", () => {
             expectations: [
               {
                 failure: null,
-                lhs: "there",
+                lhs: "a3",
+                line: 2,
+                negation: false,
+                rhs: "a3",
+                testType: "toBe",
+              },
+              {
+                failure: null,
+                lhs: "a5",
                 line: 3,
                 negation: false,
-                rhs: "there",
+                rhs: "a5",
                 testType: "toBe",
               },
             ],
@@ -221,7 +250,7 @@ describe("env.get", () => {
     return expect(
       func(
         `
-          const data = hopp.env.get("a")
+          const data = hopp.env.active.get("a")
           hopp.expect(data).toBe("<<hello>>")
       `,
         {
@@ -263,7 +292,7 @@ describe("env.get", () => {
     return expect(
       func(
         `
-          const data = hopp.env.get(5)
+          const data = hopp.env.active.get(5)
       `,
         {
           global: [],

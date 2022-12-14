@@ -1,3 +1,38 @@
+Crypto - sign payload
+Liyas - import esm modules
+
+Move stuff to index.js instead of main.js? Delete old stuff. Should I conform to old interface?
+Or do crypto?
+
+Check the package.json scripts
+Will demo work? Maybe you need to build it first
+Just get tests working. DONE
+
+Annotate stuff in appropriately
+Maintain same signature of original functions
+Typesafe result checking?
+
+Bun wasm https://twitter.com/jarredsumner/status/1498202461785374722?lang=en
+
+### old stuff
+Implementation notes
+-pw.
+-each part
+
+Write about Communication with outside world
+Which layers in lib and outside
+Implement pw. in original repo
+
+Crypto? MDN Just a few fns
+Does it meet the needs of the cli?
+https://about.sourcegraph.com/blog/migrating-monaco-codemirror
+
+Test cases for legacy env and env parts
+
+pw.console and `x = ` gave a memory error. Global scripts may be a pain.
+
+Any js object - recursive check
+
 <div align="center">
   <a href="https://hoppscotch.io">
     <img
@@ -42,6 +77,11 @@ pnpm install
 cd hoppscotch/packages/hoppscotch-js-sandbox
 ```
 
+4. Run tests using
+
+```
+npm run test
+```
 
 4. Try out the demo [`src/demo.ts`](https://github.com/hoppscotch/hoppscotch/blob/main/packages/hoppscotch-js-sandbox/src/demo.ts) using:
 

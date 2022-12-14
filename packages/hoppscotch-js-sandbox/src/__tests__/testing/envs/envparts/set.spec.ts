@@ -1,4 +1,4 @@
-import { execTestScript, TestScriptContext } from "../../.."
+import { execTestScript, TestScriptContext } from "../../../.."
 
 function func(script: string, envs: TestScriptContext["envs"]) {
   return execTestScript(script, {
@@ -22,7 +22,7 @@ describe("env.set", () => {
     return expect(
       func(
         `
-          hopp.env.set("a", "c")
+          hopp.env.active.set("a", "c")
         `,
         {
           global: [],
@@ -53,7 +53,7 @@ describe("env.set", () => {
     return expect(
       func(
         `
-          hopp.env.set("a", "c")
+          hopp.env.global.set("a", "c")
         `,
         {
           global: [
@@ -80,78 +80,72 @@ describe("env.set", () => {
     })
   })
 
-  test("updates the selected environment if env present in both", () => {
-    return expect(
-      func(
-        `
-          hopp.env.set("a", "c")
-        `,
-        {
-          global: [
-            {
-              key: "a",
-              value: "b",
-            },
-          ],
-          selected: [
-            {
-              key: "a",
-              value: "d",
-            },
-          ],
-        }
-      )
-    ).resolves.toMatchObject({
-      result: {
-        envs: {
-          global: [
-            {
-              key: "a",
-              value: "b",
-            },
-          ],
-          selected: [
-            {
-              key: "a",
-              value: "c",
-            },
-          ],
-        },
-      },
-    })
-  })
+  // test("updates the selected environment if env present in both", () => {
+  //   return expect(
+  //     func(
+  //       `
+  //         hopp.env.set("a", "c")
+  //       `,
+  //       {
+  //         global: [
+  //           {
+  //             key: "a",
+  //             value: "b",
+  //           },
+  //         ],
+  //         selected: [
+  //           {
+  //             key: "a",
+  //             value: "d",
+  //           },
+  //         ],
+  //       }
+  //     )
+  //   ).resolves.toMatchObject({result:
+  //     {
+  //         envs: {
+  //             global: [{
+  //               "key": "a",
+  //               "value": "b",
+  //           }],
+  //             selected: [{
+  //               "key": "a",
+  //               "value": "c",
+  //           }],
+  //         }
+  //     }
+  // })
+  // })
 
-  test("non existent keys are created in the selected environment", () => {
-    return expect(
-      func(
-        `
-          hopp.env.set("a", "c")
-        `,
-        {
-          global: [],
-          selected: [],
-        }
-      )
-    ).resolves.toMatchObject({
-      result: {
-        envs: {
-          global: [],
-          selected: [
-            {
-              key: "a",
-              value: "c",
-            },
-          ],
-        },
-      },
-    })
-  })
+  // test("non existent keys are created in the selected environment", () => {
+  //   return expect(
+  //     func(
+  //       `
+  //         hopp.env.set("a", "c")
+  //       `,
+  //       {
+  //         global: [],
+  //         selected: [],
+  //       }
+  //     )
+  //   ).resolves.toMatchObject({result:
+  //     {
+  //         envs: {
+  //             global: [],
+  //             selected: [{
+  //               "key": "a",
+  //               "value": "c",
+  //           }],
+  //         }
+  //     }
+  // })
+  // })
 
   test("keys should be a string", () => {
     return expect(
       func(
         `
-          hopp.env.set(5, "c")
+          hopp.env.active.set(5, "c")
         `,
         {
           global: [],
@@ -167,7 +161,7 @@ describe("env.set", () => {
     return expect(
       func(
         `
-          hopp.env.set("a", 5)
+          hopp.env.active.set("a", 5)
         `,
         {
           global: [],
@@ -183,8 +177,8 @@ describe("env.set", () => {
     return expect(
       func(
         `
-          hopp.env.set("a", "b")
-          hopp.expect(hopp.env.get("a")).toBe("b")
+          hopp.env.active.set("a", "b")
+          hopp.expect(hopp.env.active.get("a")).toBe("b")
         `,
         {
           global: [],

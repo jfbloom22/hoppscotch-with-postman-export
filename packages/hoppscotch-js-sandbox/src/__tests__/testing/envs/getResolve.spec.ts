@@ -1,28 +1,29 @@
-import * as TE from "fp-ts/TaskEither"
-import { pipe } from "fp-ts/function"
-import { execTestScript, TestResponse, TestResult } from "../../../test-runner"
+import { execTestScript, TestScriptContext } from "../../.."
 
-import "@relmify/jest-fp-ts"
-
-const fakeResponse: TestResponse = {
-  status: 200,
-  body: "hoi",
-  headers: [],
+function func(script: string, envs: TestScriptContext["envs"]) {
+  return execTestScript(script, {
+    envs,
+    artifact: {},
+    shared: {},
+    request: {
+      headers: {},
+      params: { a: "123", b: "foo" },
+    },
+    response: {
+      headers: {},
+      status: 200,
+      body: "Some body",
+    },
+  })
 }
 
-const func = (script: string, envs: TestResult["envs"]) =>
-  pipe(
-    execTestScript(script, envs, fakeResponse),
-    TE.map((x) => x.tests)
-  )
-
-describe("pw.env.getResolve", () => {
+describe("env.getResolve", () => {
   test("returns the correct value for an existing selected environment value", () => {
     return expect(
       func(
         `
-          const data = pw.env.getResolve("a")
-          pw.expect(data).toBe("b")
+          const data = hopp.env.getResolve("a")
+          hopp.expect(data).toBe("b")
       `,
         {
           global: [],
@@ -33,25 +34,34 @@ describe("pw.env.getResolve", () => {
             },
           ],
         }
-      )()
-    ).resolves.toEqualRight([
-      expect.objectContaining({
-        expectResults: [
+      )
+    ).resolves.toMatchObject({
+      result: {
+        tests: [
           {
-            status: "pass",
-            message: "Expected 'b' to be 'b'",
+            name: null,
+            expectations: [
+              {
+                failure: null,
+                lhs: "b",
+                line: 3,
+                negation: false,
+                rhs: "b",
+                testType: "toBe",
+              },
+            ],
           },
         ],
-      }),
-    ])
+      },
+    })
   })
 
   test("returns the correct value for an existing global environment value", () => {
     return expect(
       func(
         `
-          const data = pw.env.getResolve("a")
-          pw.expect(data).toBe("b")
+          const data = hopp.env.getResolve("a")
+          hopp.expect(data).toBe("b")
       `,
         {
           global: [
@@ -62,49 +72,67 @@ describe("pw.env.getResolve", () => {
           ],
           selected: [],
         }
-      )()
-    ).resolves.toEqualRight([
-      expect.objectContaining({
-        expectResults: [
+      )
+    ).resolves.toMatchObject({
+      result: {
+        tests: [
           {
-            status: "pass",
-            message: "Expected 'b' to be 'b'",
+            name: null,
+            expectations: [
+              {
+                failure: null,
+                lhs: "b",
+                line: 3,
+                negation: false,
+                rhs: "b",
+                testType: "toBe",
+              },
+            ],
           },
         ],
-      }),
-    ])
+      },
+    })
   })
 
   test("returns undefined for a key that is not present in both selected or environment", () => {
     return expect(
       func(
         `
-          const data = pw.env.getResolve("a")
-          pw.expect(data).toBe(undefined)
+          const data = hopp.env.getResolve("a")
+          hopp.expect(data).toBe(undefined)
       `,
         {
           global: [],
           selected: [],
         }
-      )()
-    ).resolves.toEqualRight([
-      expect.objectContaining({
-        expectResults: [
+      )
+    ).resolves.toMatchObject({
+      result: {
+        tests: [
           {
-            status: "pass",
-            message: "Expected 'undefined' to be 'undefined'",
+            name: null,
+            expectations: [
+              {
+                failure: null,
+                // lhs: undefined,
+                line: 3,
+                negation: false,
+                // rhs: undefined,
+                testType: "toBe",
+              },
+            ],
           },
         ],
-      }),
-    ])
+      },
+    })
   })
 
   test("returns the value defined in selected environment if it is also present in global", () => {
     return expect(
       func(
         `
-          const data = pw.env.getResolve("a")
-          pw.expect(data).toBe("selected val")
+          const data = hopp.env.getResolve("a")
+          hopp.expect(data).toBe("selected val")
       `,
         {
           global: [
@@ -120,25 +148,34 @@ describe("pw.env.getResolve", () => {
             },
           ],
         }
-      )()
-    ).resolves.toEqualRight([
-      expect.objectContaining({
-        expectResults: [
+      )
+    ).resolves.toMatchObject({
+      result: {
+        tests: [
           {
-            status: "pass",
-            message: "Expected 'selected val' to be 'selected val'",
+            name: null,
+            expectations: [
+              {
+                failure: null,
+                lhs: "selected val",
+                line: 3,
+                negation: false,
+                rhs: "selected val",
+                testType: "toBe",
+              },
+            ],
           },
         ],
-      }),
-    ])
+      },
+    })
   })
 
   test("resolve environment values", () => {
     return expect(
       func(
         `
-          const data = pw.env.getResolve("a")
-          pw.expect(data).toBe("there")
+          const data = hopp.env.getResolve("a")
+          hopp.expect(data).toBe("there")
       `,
         {
           global: [],
@@ -153,25 +190,34 @@ describe("pw.env.getResolve", () => {
             },
           ],
         }
-      )()
-    ).resolves.toEqualRight([
-      expect.objectContaining({
-        expectResults: [
+      )
+    ).resolves.toMatchObject({
+      result: {
+        tests: [
           {
-            status: "pass",
-            message: "Expected 'there' to be 'there'",
+            name: null,
+            expectations: [
+              {
+                failure: null,
+                lhs: "there",
+                line: 3,
+                negation: false,
+                rhs: "there",
+                testType: "toBe",
+              },
+            ],
           },
         ],
-      }),
-    ])
+      },
+    })
   })
 
   test("returns unresolved value on infinite loop in resolution", () => {
     return expect(
       func(
         `
-          const data = pw.env.getResolve("a")
-          pw.expect(data).toBe("<<hello>>")
+          const data = hopp.env.getResolve("a")
+          hopp.expect(data).toBe("<<hello>>")
       `,
         {
           global: [],
@@ -186,30 +232,41 @@ describe("pw.env.getResolve", () => {
             },
           ],
         }
-      )()
-    ).resolves.toEqualRight([
-      expect.objectContaining({
-        expectResults: [
+      )
+    ).resolves.toMatchObject({
+      result: {
+        tests: [
           {
-            status: "pass",
-            message: "Expected '<<hello>>' to be '<<hello>>'",
+            name: null,
+            expectations: [
+              {
+                failure: null,
+                lhs: "<<hello>>",
+                line: 3,
+                negation: false,
+                rhs: "<<hello>>",
+                testType: "toBe",
+              },
+            ],
           },
         ],
-      }),
-    ])
+      },
+    })
   })
 
   test("errors if the key is not a string", () => {
     return expect(
       func(
         `
-          const data = pw.env.getResolve(5)
+          const data = hopp.env.getResolve(5)
       `,
         {
           global: [],
           selected: [],
         }
-      )()
-    ).resolves.toBeLeft()
+      )
+    ).resolves.toMatchObject({
+      error: { message: "key is not string" },
+    })
   })
 })
