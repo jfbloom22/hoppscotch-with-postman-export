@@ -1,16 +1,13 @@
-Crypto - sign payload
-Liyas - import esm modules
+Errors in async are not stored.
 
-Move stuff to index.js instead of main.js? Delete old stuff. Should I conform to old interface?
-Or do crypto?
+
+Digest
+
+Do encrypt-decrypt and sign-verify and commit and share with Liyas
+Liyas - import esm modules
 
 Check the package.json scripts
 Will demo work? Maybe you need to build it first
-Just get tests working. DONE
-
-Annotate stuff in appropriately
-Maintain same signature of original functions
-Typesafe result checking?
 
 Bun wasm https://twitter.com/jarredsumner/status/1498202461785374722?lang=en
 

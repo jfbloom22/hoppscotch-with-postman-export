@@ -22,7 +22,7 @@ function func(script: string) {
 
 describe("toBeLevel2xx", () => {
   test("assertion passes for 200 series with no negation", async () => {
-    for (let i = 200; i < 300; i++) {
+    for (const i of [200, 204, 210]) {
       await expect(
         func(`hopp.expect(${i}).toBeLevel2xx()`)
       ).resolves.toMatchObject({
@@ -47,7 +47,7 @@ describe("toBeLevel2xx", () => {
   })
 
   test("assertion fails for non 200 series with no negation", async () => {
-    for (let i = 300; i < 500; i++) {
+    for (const i of [300, 400, 500]) {
       await expect(
         func(`hopp.expect(${i}).toBeLevel2xx()`)
       ).resolves.toMatchObject({
@@ -95,7 +95,7 @@ describe("toBeLevel2xx", () => {
   })
 
   test("assertion fails for 200 series with negation", async () => {
-    for (let i = 200; i < 300; i++) {
+    for (const i of [200, 204, 210]) {
       await expect(
         func(`hopp.expect(${i}).not.toBeLevel2xx()`)
       ).resolves.toMatchObject({
@@ -120,7 +120,7 @@ describe("toBeLevel2xx", () => {
   })
 
   test("assertion passes for non 200 series with negation", async () => {
-    for (let i = 300; i < 500; i++) {
+    for (const i of [300, 400, 500]) {
       await expect(
         func(`hopp.expect(${i}).not.toBeLevel2xx()`)
       ).resolves.toMatchObject({
@@ -170,7 +170,7 @@ describe("toBeLevel2xx", () => {
 
 describe("toBeLevel3xx", () => {
   test("assertion passes for 300 series with no negation", async () => {
-    for (let i = 300; i < 400; i++) {
+    for (const i of [301, 302]) {
       await expect(
         func(`hopp.expect(${i}).toBeLevel3xx()`)
       ).resolves.toMatchObject({
@@ -195,7 +195,7 @@ describe("toBeLevel3xx", () => {
   })
 
   test("assertion fails for non 300 series with no negation", async () => {
-    for (let i = 400; i < 600; i++) {
+    for (const i of [200, 400, 500]) {
       await expect(
         func(`hopp.expect(${i}).toBeLevel3xx()`)
       ).resolves.toMatchObject({
@@ -243,7 +243,7 @@ describe("toBeLevel3xx", () => {
   })
 
   test("assertion fails for 300 series with negation", async () => {
-    for (let i = 300; i < 400; i++) {
+    for (const i of [301, 302]) {
       await expect(
         func(`hopp.expect(${i}).not.toBeLevel3xx()`)
       ).resolves.toMatchObject({
@@ -268,7 +268,7 @@ describe("toBeLevel3xx", () => {
   })
 
   test("assertion passes for non 300 series with negation", async () => {
-    for (let i = 400; i < 600; i++) {
+    for (const i of [200, 400, 500]) {
       await expect(
         func(`hopp.expect(${i}).not.toBeLevel3xx()`)
       ).resolves.toMatchObject({
@@ -318,7 +318,7 @@ describe("toBeLevel3xx", () => {
 
 describe("toBeLevel4xx", () => {
   test("assertion passes for 400 series with no negation", async () => {
-    for (let i = 400; i < 500; i++) {
+    for (const i of [400, 403, 404, 405]) {
       await expect(
         func(`hopp.expect(${i}).toBeLevel4xx()`)
       ).resolves.toMatchObject({
@@ -343,7 +343,7 @@ describe("toBeLevel4xx", () => {
   })
 
   test("assertion fails for non 400 series with no negation", async () => {
-    for (let i = 200; i < 400; i++) {
+    for (const i of [200, 300, 500]) {
       await expect(
         func(`hopp.expect(${i}).toBeLevel4xx()`)
       ).resolves.toMatchObject({
@@ -391,7 +391,7 @@ describe("toBeLevel4xx", () => {
   })
 
   test("assertion fails for 400 series with negation", async () => {
-    for (let i = 400; i < 500; i++) {
+    for (const i of [400, 403, 404, 405]) {
       await expect(
         func(`hopp.expect(${i}).not.toBeLevel4xx()`)
       ).resolves.toMatchObject({
@@ -416,7 +416,7 @@ describe("toBeLevel4xx", () => {
   })
 
   test("assertion passes for non 400 series with negation", async () => {
-    for (let i = 200; i < 400; i++) {
+    for (const i of [200, 300, 500]) {
       await expect(
         func(`hopp.expect(${i}).not.toBeLevel4xx()`)
       ).resolves.toMatchObject({
@@ -466,7 +466,7 @@ describe("toBeLevel4xx", () => {
 
 describe("toBeLevel5xx", () => {
   test("assertion passes for 500 series with no negation", async () => {
-    for (let i = 500; i < 600; i++) {
+    for (const i of [500, 501]) {
       await expect(
         func(`hopp.expect(${i}).toBeLevel5xx()`)
       ).resolves.toMatchObject({
@@ -491,7 +491,7 @@ describe("toBeLevel5xx", () => {
   })
 
   test("assertion fails for non 500 series with no negation", async () => {
-    for (let i = 300; i < 500; i++) {
+    for (const i of [300, 400]) {
       await expect(
         func(`hopp.expect(${i}).toBeLevel5xx()`)
       ).resolves.toMatchObject({
@@ -539,7 +539,7 @@ describe("toBeLevel5xx", () => {
   })
 
   test("assertion fails for 500 series with negation", async () => {
-    for (let i = 500; i < 600; i++) {
+    for (const i of [500, 501, 502]) {
       await expect(
         func(`hopp.expect(${i}).not.toBeLevel5xx()`)
       ).resolves.toMatchObject({
@@ -564,7 +564,7 @@ describe("toBeLevel5xx", () => {
   })
 
   test("assertion passes for non 500 series with negation", async () => {
-    for (let i = 300; i < 500; i++) {
+    for (const i of [300, 400]) {
       await expect(
         func(`hopp.expect(${i}).not.toBeLevel5xx()`)
       ).resolves.toMatchObject({

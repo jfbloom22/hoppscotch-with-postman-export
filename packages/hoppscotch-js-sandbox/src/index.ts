@@ -1,45 +1,136 @@
-import { getQuickJS, QuickJSContext } from "quickjs-emscripten"
+import {
+  getQuickJS,
+  newAsyncContext,
+  QuickJSAsyncContext,
+  QuickJSContext,
+  QuickJSHandle,
+} from "quickjs-emscripten"
 import { readFileSync } from "fs"
 import { Environment, parseTemplateStringE } from "@hoppscotch/data"
 import { isLeft } from "fp-ts/Either"
+import * as crypto from "crypto"
+
+const { subtle } = crypto.webcrypto
 
 class VmWrapper {
   // @ts-expect-error error TS2564: Property 'vm' has no initializer and is not definitely assigned in the constructor.
-  vm: QuickJSContext
+  vm: QuickJSAsyncContext
 
   async init() {
     if (this.vm) {
       return
     }
 
-    const QuickJS = await getQuickJS()
-    this.vm = QuickJS.newContext()
+    // todo keep
+    this.vm = await newAsyncContext()
 
-    const handle = this.vm.newFunction(
+    const addFunctionHandle = (name: string, callback: any) => {
+      const handle = this.vm.newFunction(name, callback)
+      this.vm.setProp(this.vm.global, name, handle)
+      handle.dispose()
+    }
+
+    addFunctionHandle(
       "hostResolve",
-      (strHandle, envsHandle) => {
+      (strHandle: QuickJSHandle, envsHandle: QuickJSHandle) => {
         const str = this.vm.dump(strHandle)
         const envs = this.vm.dump(envsHandle)
-
         const x = parseTemplateStringE(str, envs)
         return this.vm.newString(isLeft(x) ? str : x.right)
       }
     )
-    this.vm.setProp(this.vm.global, "hostResolve", handle)
-    handle.dispose()
 
-    const handle2 = this.vm.newFunction("hostLog", (valueHandle) => {
+    addFunctionHandle("hostLog", (valueHandle: QuickJSHandle) => {
       const value = this.vm.dump(valueHandle)
       if (Array.isArray(value)) {
         console.log("Log from vm", ...value)
       } else {
-        console.log("Log from vm", value)
+        console.log("Log from vm", value, typeof value)
       }
     })
-    this.vm.setProp(this.vm.global, "hostLog", handle2)
-    handle2.dispose()
 
-    const result = await this.vm.evalCode(
+    addFunctionHandle("hostCryptoRandomUUID", () =>
+      this.vm.newString(crypto.randomUUID())
+    )
+
+    const readFileHandle = this.vm.newFunction("newDigest", (algorithmHandle: QuickJSHandle, messageHandle: QuickJSHandle) =>
+      {
+        console.log('new host crypto')
+        const algorithm: string = this.vm.dump(algorithmHandle)
+        const message: string = this.vm.dump(messageHandle)
+        const promise = this.vm.newPromise()
+
+        subtle.digest(
+          algorithm,
+          new TextEncoder().encode(message)
+        ).then(
+          (hashBuffer) => {
+            console.log('starting then', hashBuffer)
+            const hashArray = Array.from(new Uint8Array(hashBuffer))
+            const hashHex = hashArray
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("")
+            promise.resolve(this.vm.newString(hashHex))
+          },
+          (error) => {
+            console.log('reject by', error)
+            promise.reject(error)} 
+        )
+        promise.settled.then(this.vm.runtime.executePendingJobs)
+        return promise.handle
+      }
+    )
+    readFileHandle.consume((handle) => this.vm.setProp(this.vm.global, "newDigest", handle))
+
+    // const hostCryptoDigestHandle = this.vm.newAsyncifiedFunction(
+    //   "hostCryptoDigest",
+    //   async (algorithmHandle: QuickJSHandle, messageHandle: QuickJSHandle) => {
+    //     console.log('host crypto')
+    //     const algorithm: string = this.vm.dump(algorithmHandle)
+    //     const message: string = this.vm.dump(messageHandle)
+    //     // const a = new TextEncoder().encode(message)
+    //     const hashBuffer = await subtle.digest(
+    //       algorithm,
+    //       new TextEncoder().encode(message)
+    //     )
+    //     const hashArray = Array.from(new Uint8Array(hashBuffer))
+    //     const hashHex = hashArray
+    //       .map((b) => b.toString(16).padStart(2, "0"))
+    //       .join("")
+    //     return this.vm.newString(hashHex)
+    //   }
+    // )
+    // hostCryptoDigestHandle.consume((fn) =>
+    //   this.vm.setProp(this.vm.global, "hostCryptoDigest", fn)
+    // )
+
+    // const hostCryptoSignHandle = this.vm.newAsyncifiedFunction(
+    //   "hostCryptoSign",
+    //   async (
+    //     algorithmHandle: QuickJSHandle,
+    //     privateKeyHandle: QuickJSHandle,
+    //     messageHandle: QuickJSHandle
+    //   ) => {
+    //     const algorithm: string = this.vm.dump(algorithmHandle)
+    //     const privateKey: string = this.vm.dump(privateKeyHandle)
+    //     const message: string = this.vm.dump(messageHandle)
+    //     // const a = new TextEncoder().encode(message)
+    //     const hashBuffer = await subtle.digest(
+    //       algorithm,
+    //       new TextEncoder().encode(message)
+    //     )
+    //     const hashArray = Array.from(new Uint8Array(hashBuffer))
+    //     const hashHex = hashArray
+    //       .map((b) => b.toString(16).padStart(2, "0"))
+    //       .join("")
+    //     return this.vm.newString(hashHex)
+    //   }
+    // )
+    // hostCryptoSignHandle.consume((fn) =>
+    //   this.vm.setProp(this.vm.global, "hostCryptoSign", fn)
+    // )
+
+    const result = await this.vm.evalCodeAsync(
       readFileSync("./src/lib.js", "utf8"),
       "lib.js"
     )
@@ -54,7 +145,8 @@ class VmWrapper {
 
   async evalCode(code: string, filename = "ours.js"): Promise<VMError | null> {
     await this.init()
-    const result = this.vm.evalCode(code, filename)
+    const result = await this.vm.evalCodeAsync(code, filename)
+    
     if (result.error) {
       const out = this.vm.dump(result.error)
       result.error.dispose()
@@ -66,7 +158,9 @@ class VmWrapper {
   }
 
   async getOutput(code = "out") {
-    const result = await this.vm.evalCode(code)
+    // await this.vm
+    const result = await this.vm.evalCodeAsync(code)
+    // await this.vm.runtime.executePendingJobs()
     // @ts-expect-error Property 'value' does not exist on type 'VmCallResult<QuickJSHandle>
     const out = this.vm.dump(result.value)
     // @ts-expect-error Property 'value' does not exist on type 'VmCallResult<QuickJSHandle>
@@ -164,7 +258,7 @@ export type PreRequestScriptReport = {
 export type TestScriptReport = {
   error: VMError | null
   result: {
-    console: ConsoleOutput
+    console: ConsoleOutput[]
     envs: {
       global: Environment["variables"]
       selected: Environment["variables"]
@@ -181,6 +275,7 @@ export async function execTestScript(
   const vm = new VmWrapper()
   await vm.evalCode(`setPostRequestContext(${JSON.stringify(context)})`)
   const maybeError = await vm.evalCode(script, "ours.js")
+  console.log("pending jobs thing", vm.vm.runtime.executePendingJobs(-1))
   const out = {
     error: maybeError,
     result: <TestScriptReport["result"]>await vm.getOutput(),

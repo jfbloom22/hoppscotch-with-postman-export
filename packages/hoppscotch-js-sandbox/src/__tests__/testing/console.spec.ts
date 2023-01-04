@@ -59,9 +59,12 @@ describe("Console stuff", () => {
       func(
         `
             const a = {}
-            a.b = a`
+            a.b = a
+            console.log(a)`
       )
-    ).rejects.toThrow("Assertion failed: list_empty(&rt->gc_obj_list)")
+    ).resolves.toMatchObject({
+      result: "[object Object]",
+    })
   })
 
   test("Correct line number is tracked", async () => {
