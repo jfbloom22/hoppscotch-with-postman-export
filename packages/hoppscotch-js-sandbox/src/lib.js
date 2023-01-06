@@ -462,8 +462,12 @@ class Shared {
   }
 }
 
+const console = new Console()
+
+const crypto = {
+  randomUUID: hostCryptoRandomUUID,
+}
 let out
-let console
 let pw
 let hopp
 
@@ -471,7 +475,6 @@ let hopp
 function setPreRequestContext(context) {
   const legacyEnv = new LegacyEnv(context.envs)
   const env = new Env(context.envs)
-  console = new Console()
   const artifact = new Shared(context.artifact)
   const shared = new Shared({})
   pw = {
@@ -493,7 +496,6 @@ function setPreRequestContext(context) {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function setPostRequestContext(context) {
-  console = new Console()
   const testSuite = new TestSuite()
   const legacyEnv = new LegacyEnv(context.envs)
   const env = new Env(context.envs)
@@ -503,7 +505,7 @@ function setPostRequestContext(context) {
   pw = {
     env: legacyEnv,
     response: context.response,
-    console: console,
+    console,
     test: (name, func) => testSuite.executeTest(name, func),
     expect: (lhs) => testSuite.createExpect(lhs),
   }

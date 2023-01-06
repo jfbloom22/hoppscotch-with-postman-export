@@ -1,7 +1,12 @@
-import { getQuickJS, QuickJSContext } from "quickjs-emscripten"
+import {
+  getQuickJS,
+  QuickJSContext,
+  QuickJSHandle,
+} from "quickjs-emscripten"
 import { readFileSync } from "fs"
 import { Environment, parseTemplateStringE } from "@hoppscotch/data"
 import { isLeft } from "fp-ts/Either"
+import * as crypto from "crypto"
 
 class VmWrapper {
   // @ts-expect-error error TS2564: Property 'vm' has no initializer and is not definitely assigned in the constructor.
@@ -15,20 +20,23 @@ class VmWrapper {
     const QuickJS = await getQuickJS()
     this.vm = QuickJS.newContext()
 
-    const handle = this.vm.newFunction(
+    const addFunctionHandle = (name: string, callback: any) => {
+      const handle = this.vm.newFunction(name, callback)
+      this.vm.setProp(this.vm.global, name, handle)
+      handle.dispose()
+    }
+
+    addFunctionHandle(
       "hostResolve",
-      (strHandle, envsHandle) => {
+      (strHandle: QuickJSHandle, envsHandle: QuickJSHandle) => {
         const str = this.vm.dump(strHandle)
         const envs = this.vm.dump(envsHandle)
-
         const x = parseTemplateStringE(str, envs)
         return this.vm.newString(isLeft(x) ? str : x.right)
       }
     )
-    this.vm.setProp(this.vm.global, "hostResolve", handle)
-    handle.dispose()
 
-    const handle2 = this.vm.newFunction("hostLog", (valueHandle) => {
+    addFunctionHandle("hostLog", (valueHandle: QuickJSHandle) => {
       const value = this.vm.dump(valueHandle)
       if (Array.isArray(value)) {
         console.log("Log from vm", ...value)
@@ -36,8 +44,10 @@ class VmWrapper {
         console.log("Log from vm", value)
       }
     })
-    this.vm.setProp(this.vm.global, "hostLog", handle2)
-    handle2.dispose()
+
+    addFunctionHandle("hostCryptoRandomUUID", () =>
+      this.vm.newString(crypto.randomUUID())
+    )
 
     const result = await this.vm.evalCode(
       readFileSync("./src/lib.js", "utf8"),
@@ -65,8 +75,9 @@ class VmWrapper {
     }
   }
 
-  async getOutput(code = "out") {
-    const result = await this.vm.evalCode(code)
+  async getOutput() {
+    const result = this.vm.evalCode("out")
+    this.vm.runtime.executePendingJobs()
     // @ts-expect-error Property 'value' does not exist on type 'VmCallResult<QuickJSHandle>
     const out = this.vm.dump(result.value)
     // @ts-expect-error Property 'value' does not exist on type 'VmCallResult<QuickJSHandle>
@@ -164,7 +175,7 @@ export type PreRequestScriptReport = {
 export type TestScriptReport = {
   error: VMError | null
   result: {
-    console: ConsoleOutput
+    console: ConsoleOutput[]
     envs: {
       global: Environment["variables"]
       selected: Environment["variables"]
