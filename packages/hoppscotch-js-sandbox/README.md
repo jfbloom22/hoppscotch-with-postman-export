@@ -1,27 +1,12 @@
+btoa and atob
+
 Integrate into existing codebase?
-Errors in async are not stored.
-
-
-Digest
-
-Do encrypt-decrypt and sign-verify and commit and share with Liyas
 Liyas - import esm modules
 
 Check the package.json scripts
 Will demo work? Maybe you need to build it first
-
-Bun wasm https://twitter.com/jarredsumner/status/1498202461785374722?lang=en
-
-### old stuff
-Implementation notes
--pw.
--each part
-
 Write about Communication with outside world
 Which layers in lib and outside
-Implement pw. in original repo
-
-Crypto? MDN Just a few fns
 Does it meet the needs of the cli?
 https://about.sourcegraph.com/blog/migrating-monaco-codemirror
 

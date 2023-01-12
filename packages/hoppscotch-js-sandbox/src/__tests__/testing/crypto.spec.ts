@@ -1,4 +1,4 @@
-import { execTestScript } from ".."
+import { execTestScript } from "../.."
 
 function func(script: string) {
   return execTestScript(script, {

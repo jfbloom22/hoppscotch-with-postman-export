@@ -1,24 +1,31 @@
 import {
-  getQuickJS,
-  QuickJSContext,
+  newQuickJSAsyncWASMModule,
+  QuickJSAsyncContext,
   QuickJSHandle,
 } from "quickjs-emscripten"
 import { readFileSync } from "fs"
+import axios from "axios"
 import { Environment, parseTemplateStringE } from "@hoppscotch/data"
 import { isLeft } from "fp-ts/Either"
 import * as crypto from "crypto"
 
 class VmWrapper {
   // @ts-expect-error error TS2564: Property 'vm' has no initializer and is not definitely assigned in the constructor.
-  vm: QuickJSContext
+  vm: QuickJSAsyncContext
 
   async init() {
     if (this.vm) {
       return
     }
 
-    const QuickJS = await getQuickJS()
-    this.vm = QuickJS.newContext()
+    const QuickJS = await newQuickJSAsyncWASMModule()
+    const runtime = QuickJS.newRuntime()
+    this.vm = runtime.newContext()
+
+    runtime.setModuleLoader(async (moduleName) => {
+      const response = await axios.get(moduleName)
+      return response.data
+    })
 
     const addFunctionHandle = (name: string, callback: any) => {
       const handle = this.vm.newFunction(name, callback)
@@ -64,7 +71,7 @@ class VmWrapper {
 
   async evalCode(code: string, filename = "ours.js"): Promise<VMError | null> {
     await this.init()
-    const result = this.vm.evalCode(code, filename)
+    const result = await this.vm.evalCodeAsync(code, filename)
     if (result.error) {
       const out = this.vm.dump(result.error)
       result.error.dispose()
