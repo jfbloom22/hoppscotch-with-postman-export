@@ -42,6 +42,7 @@
       @remove-collection="removeCollection"
       @remove-folder="removeFolder"
       @drop-collection="dropCollection"
+      @export-postman-collection="exportPostmanCollection"
       @update-request-order="updateRequestOrder"
       @update-collection-order="updateCollectionOrder"
       @edit-request="editRequest"
@@ -69,6 +70,7 @@
       @edit-collection="editCollection"
       @edit-folder="editFolder"
       @export-data="exportData"
+      @export-postman-collection="exportPostmanCollection"
       @remove-collection="removeCollection"
       @remove-folder="removeFolder"
       @edit-request="editRequest"
@@ -221,6 +223,7 @@ import * as E from "fp-ts/Either"
 import { platform } from "~/platform"
 import { createCollectionGists } from "~/helpers/gist"
 import { workspaceStatus$ } from "~/newstore/workspace"
+import { exportMyCollectionToPostmanCollection } from "~/helpers/import-export/export/postman"
 import {
   createNewTab,
   currentActiveTab,
@@ -1875,9 +1878,33 @@ const exportData = async (
   }
 }
 
+const exportPostmanCollection = async (
+  collection: HoppCollection<HoppRESTRequest> | TeamCollection
+) => {
+  let finalCollection: HoppCollection<HoppRESTRequest> | null = null
+  if (collectionsType.value.type === "my-collections") {
+    finalCollection = collection as HoppCollection<HoppRESTRequest>
+  } else {
+    if (!collection.id) return
+    const foo = await getCompleteCollectionTree(collection.id)()
+    if (E.isLeft(foo)) {
+      toast.error(`${getErrorMessage(foo.left)}`)
+      exportLoading.value = false
+      return
+    } else {
+      finalCollection = teamCollToHoppRESTColl(foo.right)
+    }
+  }
+
+  const contents = exportMyCollectionToPostmanCollection(finalCollection)
+  initializeDownloadCollection(
+    contents,
+    finalCollection.name + ".postman-collection-export"
+  )
+}
+
 const exportJSONCollection = async () => {
   await getJSONCollection()
-
   initializeDownloadCollection(collectionJSON.value, null)
 }
 

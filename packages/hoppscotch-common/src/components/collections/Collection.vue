@@ -148,6 +148,20 @@
                     "
                   />
                   <HoppSmartItem
+                    ref="exportPostmanCollectionAction"
+                    :icon="IconDownload"
+                    :label="t('export.as_postman')"
+                    :shortcut="['P']"
+                    :loading="exportLoading"
+                    @click="
+                      () => {
+                        emit('export-postman-collection'),
+                          collectionsType === 'my-collections' ? hide() : null
+                      }
+                    "
+                  />
+
+                  <HoppSmartItem
                     ref="deleteAction"
                     :icon="IconTrash2"
                     :label="t('action.delete')"
@@ -277,6 +291,7 @@ const emit = defineEmits<{
   (event: "add-folder"): void
   (event: "edit-collection"): void
   (event: "export-data"): void
+  (event: "export-postman-collection"): void
   (event: "remove-collection"): void
   (event: "drop-event", payload: DataTransfer): void
   (event: "drag-event", payload: DataTransfer): void
